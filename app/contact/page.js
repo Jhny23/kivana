@@ -9,32 +9,33 @@ export default function ContactPage() {
 
   const handleChange = e => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
-  const handleSubmit = async e => {
-    e.preventDefault();
-    if (!form.name || !form.email || !form.message) { setError('Please fill in all required fields.'); return; }
-    setError('');
-    setLoading(true);
+const handleSubmit = async e => {
+  e.preventDefault();
+  if (!form.name || !form.email || !form.message) {
+    setError('Please fill in all required fields.');
+    return;
+  }
+  setError('');
+  setLoading(true);
 
-    // TO ACTIVATE: replace YOUR_FORM_ID with your Formspree form ID from formspree.io (free)
-    // e.g. https://formspree.io/f/xpzgkdna
-    try {
-      const res = await fetch('https://formspree.io/f/YOUR_FORM_ID', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(form),
-      });
-      if (res.ok) {
-        setSubmitted(true);
-      } else {
-        // Fallback: show success anyway in demo mode
-        setSubmitted(true);
-      }
-    } catch {
-      setSubmitted(true); // demo fallback
-    } finally {
-      setLoading(false);
+  try {
+    const res = await fetch('/api/contact', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form),
+    });
+
+    if (res.ok) {
+      setSubmitted(true);
+    } else {
+      setError('Something went wrong. Please try again.');
     }
-  };
+  } catch {
+    setError('Something went wrong. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div>

@@ -45,7 +45,21 @@ function Testimonials() {
 function Newsletter() {
   const [email, setEmail]       = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const handleSubmit = e => { e.preventDefault(); if (email) setSubmitted(true); };
+  const handleSubmit = async e => {
+  e.preventDefault();
+  if (!email) return;
+  
+  try {
+    const res = await fetch('/api/newsletter', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    });
+    if (res.ok) setSubmitted(true);
+  } catch {
+    setSubmitted(true); // still show success to user
+  }
+};
   return (
     <section className="border-t border-cream py-16 md:py-20">
       <div className="max-w-[1400px] mx-auto px-6 md:px-10">

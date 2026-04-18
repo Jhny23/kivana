@@ -104,18 +104,55 @@ export default function CheckoutPage() {
     setPayment(p => ({ ...p, [e.target.name]: v }));
   };
 
-  const handleOrderComplete = (paymentDetails) => {
+const handleOrderComplete = async (paymentDetails) => {
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items,
+        shipping,
+        payment: paymentDetails,
+        subtotal: total.toFixed(2),
+        discount: discountAmt.toFixed(2),
+        shippingCost: shippingCost.toFixed(2),
+        tax: tax.toFixed(2),
+        total: grand.toFixed(2),
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      console.error('Order failed:', data.error);
+      return;
+    }
+
+    // Save order details for confirmation page
     const order = {
-      id: 'KIV-' + Date.now().toString(36).toUpperCase(),
+      id: data.orderNumber,
       date: new Date().toLocaleDateString('en-KE', { dateStyle: 'long' }),
-      items, shipping, payment: paymentDetails,
-      subtotal: total.toFixed(2), discount: discountAmt.toFixed(2),
-      shippingCost: shippingCost.toFixed(2), tax: tax.toFixed(2), grand: grand.toFixed(2),
+      items,
+      shipping,
+      payment: paymentDetails,
+      subtotal: total.toFixed(2),
+      discount: discountAmt.toFixed(2),
+      shippingCost: shippingCost.toFixed(2),
+      tax: tax.toFixed(2),
+      grand: grand.toFixed(2),
     };
-    try { sessionStorage.setItem('kivana-last-order', JSON.stringify(order)); } catch {}
+
+    try {
+      sessionStorage.setItem('kivana-last-order', JSON.stringify(order));
+    } catch {}
+
     clearCart();
     router.push('/order-confirmation');
-  };
+
+  } catch (err) {
+    console.error('Order error:', err);
+  }
+};
 
   const shippingValid = shipping.firstName && shipping.lastName && shipping.email && shipping.address && shipping.city;
 
