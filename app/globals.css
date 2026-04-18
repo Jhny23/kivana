@@ -1,0 +1,187 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-ink:   #2A0800;
+  --color-bark:  #775144;
+  --color-clay:  #51403D;
+  --color-dusk:  #30333A;
+  --color-mauve: #C09891;
+  --color-blush: #BEA8A7;
+  --color-mist:  #B0A6A7;
+  --color-cream: #F4D8D8;
+  --color-petal: #F9EDEA;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-petal);
+  color: var(--color-ink);
+  font-family: var(--font-jost), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Custom Scrollbar ── */
+::-webkit-scrollbar          { width: 6px; height: 6px; }
+::-webkit-scrollbar-track    { background: var(--color-petal); }
+::-webkit-scrollbar-thumb    { background: var(--color-mauve); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-bark); }
+
+/* ── Selection ── */
+::selection { background: var(--color-mauve); color: #fff; }
+
+/* ── Reveal animations ── */
+@layer utilities {
+  .reveal {
+    opacity: 0;
+    transform: translateY(28px);
+    transition: opacity 0.75s ease, transform 0.75s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+}
+
+/* ── Product card hover image swap ── */
+.product-card .img-default  { transition: opacity 0.45s ease; opacity: 1; }
+.product-card .img-hover    { transition: opacity 0.45s ease; opacity: 0; position: absolute; inset: 0; }
+.product-card:hover .img-default { opacity: 0; }
+.product-card:hover .img-hover   { opacity: 1; }
+
+/* ── Underline link ── */
+.link-underline {
+  position: relative;
+  display: inline-block;
+}
+.link-underline::after {
+  content: '';
+  position: absolute;
+  bottom: -2px; left: 0;
+  width: 0; height: 1px;
+  background: currentColor;
+  transition: width 0.35s ease;
+}
+.link-underline:hover::after { width: 100%; }
+
+/* ── Marquee ── */
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 28s linear infinite;
+}
+
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* ── Cart overlay ── */
+.cart-overlay {
+  position: fixed; inset: 0;
+  background: rgba(42, 8, 0, 0.35);
+  z-index: 40;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.cart-overlay.open { opacity: 1; pointer-events: all; }
+
+.cart-drawer {
+  position: fixed; top: 0; right: 0;
+  height: 100%;
+  width: min(420px, 100vw);
+  background: var(--color-petal);
+  z-index: 50;
+  transform: translateX(100%);
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  overflow-y: auto;
+}
+.cart-drawer.open { transform: translateX(0); }
+
+/* ── Accordion ── */
+.accordion-content {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease;
+}
+.accordion-content.open { max-height: 600px; }
+
+/* ── Focus ring ── */
+*:focus-visible {
+  outline: 2px solid var(--color-bark);
+  outline-offset: 3px;
+}
+
+/* ── Button ── */
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--color-ink);
+  color: var(--color-cream);
+  font-family: var(--font-jost), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.875rem 2.5rem;
+  border: 1px solid var(--color-ink);
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+  cursor: pointer;
+}
+.btn-primary:hover {
+  background: transparent;
+  color: var(--color-ink);
+}
+
+.btn-outline {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent;
+  color: var(--color-ink);
+  font-family: var(--font-jost), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.875rem 2.5rem;
+  border: 1px solid var(--color-ink);
+  transition: background 0.3s ease, color 0.3s ease;
+  cursor: pointer;
+}
+.btn-outline:hover {
+  background: var(--color-ink);
+  color: var(--color-cream);
+}
+
+.btn-light {
+  display: inline-flex; align-items: center; justify-content: center;
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-jost), sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 0.875rem 2.5rem;
+  border: 1px solid var(--color-cream);
+  transition: background 0.3s ease, color 0.3s ease;
+  cursor: pointer;
+}
+.btn-light:hover {
+  background: transparent;
+  color: var(--color-cream);
+}
+
+/* ── Font variable bindings (loaded via <link> in layout) ── */
+:root {
+  --font-cormorant: 'Cormorant', Georgia, serif;
+  --font-jost: 'Jost', system-ui, sans-serif;
+}
