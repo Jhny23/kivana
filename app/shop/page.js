@@ -1,15 +1,29 @@
 'use client';
-import { useState, useMemo, Suspense } from 'react';
+import { useState, useMemo, Suspense, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import ProductCard from '@/components/ProductCard';
-import { ProductGridSkeleton } from '@/components/Skeleton';
-import { products, categories } from '@/lib/products';
+import { products as staticProducts, categories } from '@/lib/products';
 
 function ShopContent() {
-  const searchParams = useSearchParams();
-  const initCat      = searchParams.get('cat') || 'all';
+  const searchParams  = useSearchParams();
+  const initCat       = searchParams.get('cat') || 'all';
   const [activecat, setActivecat] = useState(initCat);
   const [sort,      setSort]      = useState('default');
+  const [products,  setProducts]  = useState(staticProducts);
+
+  // Fetch live stock from API and merge with static products
+  useEffect(() => {
+    fetch('/api/products/stock')
+      .then(r => r.json())
+      .then(liveStock => {
+        if (!liveStock.data) return;
+        setProducts(prev => prev.map(p => {
+          const live = liveStock.data.find(l => l.slug === p.slug);
+          return live ? { ...p, stock: live.stock } : p;
+        }));
+      })
+      .catch(() => {}); // fail silently — use static stock as fallback
+  }, []);
 
   const filtered = useMemo(() => {
     let list = activecat === 'all' ? [...products] : products.filter(p => p.category === activecat);
@@ -17,10 +31,9 @@ function ShopContent() {
     if (sort === 'price-desc') list = [...list].sort((a, b) => b.price - a.price);
     if (sort === 'name')       list = [...list].sort((a, b) => a.name.localeCompare(b.name));
     return list;
-  }, [activecat, sort]);
+  }, [activecat, sort, products]);
 
-  const tabs = [{ slug: 'all', name: 'All' }, ...categories];
-
+  const tabs     = [{ slug: 'all', name: 'All' }, ...categories];
   const catLabel = activecat === 'all' ? 'All Products' : categories.find(c => c.slug === activecat)?.name || 'Products';
 
   return (
