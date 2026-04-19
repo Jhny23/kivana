@@ -1,5 +1,5 @@
 import { supabaseAdmin } from '@/lib/supabase';
-import { sendOrderConfirmation, sendOrderNotification } from '@/lib/emails';
+import { sendOrderConfirmation, sendOrderNotification } from '@/lib/email';
 
 export async function POST(request) {
   try {
