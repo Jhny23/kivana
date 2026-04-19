@@ -1,4 +1,4 @@
-import { saveMessage } from '@/lib/db';
+import { supabaseAdmin } from '@/lib/supabase';
 
 export async function POST(request) {
   try {
@@ -12,9 +12,12 @@ export async function POST(request) {
       );
     }
 
-    const saved = await saveMessage({ name, email, subject, message });
+    const { error } = await supabaseAdmin
+      .from('messages')
+      .insert([{ name, email, subject, message }]);
 
-    if (!saved) {
+    if (error) {
+      console.error('Supabase error:', error);
       return Response.json(
         { error: 'Could not save message' },
         { status: 500 }
@@ -22,7 +25,9 @@ export async function POST(request) {
     }
 
     return Response.json({ success: true });
+
   } catch (err) {
+    console.error('Contact route error:', err.message);
     return Response.json(
       { error: 'Server error' },
       { status: 500 }
