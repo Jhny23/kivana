@@ -42,14 +42,102 @@ export default function MpesaPayment({ amount, onSuccess, onBack }) {
   };
 
   // Simulate STK push — replace body with real fetch to /api/mpesa/stk-push
-  const initiatePayment = async () => {
-    if (!validatePhone(phone)) {
-      setError('Please enter a valid Safaricom number (07XX or 01XX)');
+ const initiatePayment = async () => {
+  if (!validatePhone(phone)) {
+    setError('Please enter a valid Safaricom number (07XX or 01XX)');
+    return;
+  }
+  setStage('pushing');
+  setError('');
+
+  try {
+    // Convert USD to KES (approximate rate)
+    const kesAmount = Math.ceil(amount * 130);
+
+    const res = await fetch('/api/mpesa/stk-push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        phone: formatForDaraja(phone),
+        amount: kesAmount,
+        orderReference: 'Kivana-' + Date.now(),
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.checkoutRequestId) {
+      setStage('failed');
+      setError(data.error || 'Failed to send payment request. Please try again.');
       return;
     }
-    setStage('pushing');
-    setError('');
 
+    setCheckoutId(data.checkoutRequestId);
+    setStage('waiting');
+    setCountdown(60);
+
+    // Start polling for payment confirmation
+    startPolling(data.checkoutRequestId);
+
+  } catch (err) {
+    setStage('failed');
+    setError('Network error. Please try again.');
+  }
+};
+
+
+const startPolling = (checkoutRequestId) => {
+  let attempts = 0;
+  const maxAttempts = 20; // 60 seconds / 3 seconds
+
+  pollRef.current = setInterval(async () => {
+    attempts++;
+
+    try {
+      const res = await fetch(
+        `/api/mpesa/query?checkoutRequestId=${checkoutRequestId}`
+      );
+      const data = await res.json();
+
+      console.log('Poll result:', data);
+
+      if (data.status === 'confirmed') {
+        clearInterval(pollRef.current);
+        clearInterval(timerRef.current);
+        setStage('success');
+        setTimeout(() => {
+          onSuccess({
+            method: 'mpesa',
+            checkoutId: checkoutRequestId,
+            orderId: data.orderId,
+            amount,
+          });
+        }, 1500);
+      }
+
+      if (data.status === 'failed' || data.status === 'cancelled') {
+        clearInterval(pollRef.current);
+        clearInterval(timerRef.current);
+        setStage('failed');
+        setError(
+          data.status === 'cancelled'
+            ? 'Payment was cancelled. Please try again.'
+            : 'Payment failed. Please try again.'
+        );
+      }
+
+      if (attempts >= maxAttempts) {
+        clearInterval(pollRef.current);
+        clearInterval(timerRef.current);
+        setStage('failed');
+        setError('Payment timed out. Please try again.');
+      }
+
+    } catch (err) {
+      console.error('Polling error:', err);
+    }
+  }, 3000);
+};
     // Demo: simulate network delay for STK push initiation
     await new Promise(r => setTimeout(r, 1800));
 
@@ -60,18 +148,7 @@ export default function MpesaPayment({ amount, onSuccess, onBack }) {
 
     // Demo: auto-succeed after 6 seconds (simulates user entering PIN)
     // In production: poll GET /api/mpesa/query?checkoutId=... every 3s
-    pollRef.current = setTimeout(() => {
-      setStage('success');
-      clearInterval(timerRef.current);
-      setTimeout(() => onSuccess({
-        method: 'mpesa',
-        phone: formatForDaraja(phone),
-        checkoutId: fakeCheckoutId,
-        amount,
-      }), 1200);
-    }, 6000);
-  };
-
+    
   // Countdown timer while waiting
   useEffect(() => {
     if (stage !== 'waiting') return;

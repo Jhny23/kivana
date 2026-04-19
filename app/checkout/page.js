@@ -106,6 +106,10 @@ export default function CheckoutPage() {
 
 const handleOrderComplete = async (paymentDetails) => {
   try {
+    // For M-Pesa: save a pending order first, then confirm via callback
+    // For card: save as confirmed immediately
+    const status = paymentDetails.method === 'mpesa' ? 'pending' : 'confirmed';
+
     const res = await fetch('/api/orders', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -118,17 +122,17 @@ const handleOrderComplete = async (paymentDetails) => {
         shippingCost: shippingCost.toFixed(2),
         tax: tax.toFixed(2),
         total: grand.toFixed(2),
+        status,
       }),
     });
 
     const data = await res.json();
 
     if (!res.ok) {
-      console.error('Order failed:', data.error);
+      alert(data.error || 'Something went wrong. Please try again.');
       return;
     }
 
-    // Save order details for confirmation page
     const order = {
       id: data.orderNumber,
       date: new Date().toLocaleDateString('en-KE', { dateStyle: 'long' }),
@@ -151,6 +155,7 @@ const handleOrderComplete = async (paymentDetails) => {
 
   } catch (err) {
     console.error('Order error:', err);
+    alert('Something went wrong. Please try again.');
   }
 };
 

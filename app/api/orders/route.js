@@ -27,7 +27,7 @@ export async function POST(request) {
         total: parseFloat(total),
         payment_method: payment.method,
         payment_reference: payment.reference || payment.checkoutId || null,
-        status: 'confirmed',
+        status: body.status || 'confirmed',
       }])
       .select()
       .single();
