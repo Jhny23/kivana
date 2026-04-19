@@ -106,8 +106,6 @@ export default function CheckoutPage() {
 
 const handleOrderComplete = async (paymentDetails) => {
   try {
-    // For M-Pesa: save a pending order first, then confirm via callback
-    // For card: save as confirmed immediately
     const status = paymentDetails.method === 'mpesa' ? 'pending' : 'confirmed';
 
     const res = await fetch('/api/orders', {
@@ -132,26 +130,34 @@ const handleOrderComplete = async (paymentDetails) => {
       alert(data.error || 'Something went wrong. Please try again.');
       return;
     }
-
-    const order = {
-      id: data.orderNumber,
-      date: new Date().toLocaleDateString('en-KE', { dateStyle: 'long' }),
-      items,
-      shipping,
-      payment: paymentDetails,
-      subtotal: total.toFixed(2),
-      discount: discountAmt.toFixed(2),
-      shippingCost: shippingCost.toFixed(2),
-      tax: tax.toFixed(2),
-      grand: grand.toFixed(2),
-    };
-
-    try {
-      sessionStorage.setItem('kivana-last-order', JSON.stringify(order));
-    } catch {}
+    // Save to sessionStorage as fallback for confirmation page
+try {
+  const orderForSession = {
+    id: data.orderNumber,
+    date: new Date().toLocaleDateString('en-KE', { dateStyle: 'long' }),
+    items,
+    shipping,
+    payment: paymentDetails,
+    subtotal: total.toFixed(2),
+    discount: discountAmt.toFixed(2),
+    shippingCost: shippingCost.toFixed(2),
+    tax: tax.toFixed(2),
+    grand: grand.toFixed(2),
+  };
+  sessionStorage.setItem('kivana-last-order', JSON.stringify(orderForSession));
+} catch {}
 
     clearCart();
-    router.push(`/order-confirmation?id=${data.orderId}`);
+
+    
+
+    // For M-Pesa — redirect to confirmation using the real Supabase order ID
+     // Redirect
+    if (paymentDetails.method === 'mpesa') {
+      router.push('/order-confirmation');
+    } else {
+      router.push(`/order-confirmation?id=${data.orderId}`);
+    }
 
   } catch (err) {
     console.error('Order error:', err);

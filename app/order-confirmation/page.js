@@ -12,10 +12,11 @@ function OrderContent() {
   const [order,   setOrder]   = useState(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!orderId) { setLoading(false); return; }
+useEffect(() => {
+  const orderId = searchParams.get('id');
 
-    // Try Supabase first
+  if (orderId) {
+    // Fetch from Supabase by ID
     supabase
       .from('orders')
       .select('*')
@@ -33,7 +34,17 @@ function OrderContent() {
         }
         setLoading(false);
       });
-  }, [orderId]);
+  } else {
+    // No ID in URL — try sessionStorage
+    try {
+      const saved = sessionStorage.getItem('kivana-last-order');
+      if (saved) {
+        setOrder(JSON.parse(saved));
+      }
+    } catch {}
+    setLoading(false);
+  }
+}, []);
 
   if (loading) {
     return (
