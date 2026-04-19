@@ -3,17 +3,15 @@ import { useState, useEffect, useRef } from 'react';
 
 const MPESA_GREEN = '#00A651';
 
-// M-Pesa STK Push demo — mirrors the real Safaricom Daraja API flow exactly.
-// To go live: replace the simulateSTKPush function with a real API route
-// that calls https://sandbox.safaricom.co.ke/mpesa/stkpush/v1/processrequest
+// M-Pesa STK Push — mirrors the real Safaricom Daraja API flow.
 // Credentials needed: MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_SHORTCODE, MPESA_PASSKEY
 
 export default function MpesaPayment({ amount, onSuccess, onBack }) {
-  const [phone,    setPhone]    = useState('');
-  const [stage,    setStage]    = useState('input');   // input | pushing | waiting | success | failed
+  const [phone,     setPhone]     = useState('');
+  const [stage,     setStage]     = useState('input'); // input | pushing | waiting | success | failed
   const [countdown, setCountdown] = useState(60);
   const [checkoutId, setCheckoutId] = useState('');
-  const [error,    setError]    = useState('');
+  const [error,     setError]     = useState('');
   const timerRef = useRef(null);
   const pollRef  = useRef(null);
 
@@ -41,114 +39,97 @@ export default function MpesaPayment({ amount, onSuccess, onBack }) {
     return '254' + digits.slice(1); // 0712345678 → 254712345678
   };
 
-  // Simulate STK push — replace body with real fetch to /api/mpesa/stk-push
- const initiatePayment = async () => {
-  if (!validatePhone(phone)) {
-    setError('Please enter a valid Safaricom number (07XX or 01XX)');
-    return;
-  }
-  setStage('pushing');
-  setError('');
-
-  try {
-    // Convert USD to KES (approximate rate)
-    const kesAmount = Math.ceil(amount * 130);
-
-    const res = await fetch('/api/mpesa/stk-push', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        phone: formatForDaraja(phone),
-        amount: kesAmount,
-        orderReference: 'Kivana-' + Date.now(),
-      }),
-    });
-
-    const data = await res.json();
-
-    if (!res.ok || !data.checkoutRequestId) {
-      setStage('failed');
-      setError(data.error || 'Failed to send payment request. Please try again.');
+  const initiatePayment = async () => {
+    if (!validatePhone(phone)) {
+      setError('Please enter a valid Safaricom number (07XX or 01XX)');
       return;
     }
-
-    setCheckoutId(data.checkoutRequestId);
-    setStage('waiting');
-    setCountdown(60);
-
-    // Start polling for payment confirmation
-    startPolling(data.checkoutRequestId);
-
-  } catch (err) {
-    setStage('failed');
-    setError('Network error. Please try again.');
-  }
-};
-
-
-const startPolling = (checkoutRequestId) => {
-  let attempts = 0;
-  const maxAttempts = 20; // 60 seconds / 3 seconds
-
-  pollRef.current = setInterval(async () => {
-    attempts++;
+    setStage('pushing');
+    setError('');
 
     try {
-      const res = await fetch(
-        `/api/mpesa/query?checkoutRequestId=${checkoutRequestId}`
-      );
+      const kesAmount = Math.ceil(amount * 130);
+
+      const res = await fetch('/api/mpesa/stk-push', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          phone: formatForDaraja(phone),
+          amount: kesAmount,
+          orderReference: 'Kivana-' + Date.now(),
+        }),
+      });
+
       const data = await res.json();
 
-      console.log('Poll result:', data);
-
-      if (data.status === 'confirmed') {
-        clearInterval(pollRef.current);
-        clearInterval(timerRef.current);
-        setStage('success');
-        setTimeout(() => {
-          onSuccess({
-            method: 'mpesa',
-            checkoutId: checkoutRequestId,
-            orderId: data.orderId,
-            amount,
-          });
-        }, 1500);
-      }
-
-      if (data.status === 'failed' || data.status === 'cancelled') {
-        clearInterval(pollRef.current);
-        clearInterval(timerRef.current);
+      if (!res.ok || !data.checkoutRequestId) {
         setStage('failed');
-        setError(
-          data.status === 'cancelled'
-            ? 'Payment was cancelled. Please try again.'
-            : 'Payment failed. Please try again.'
-        );
+        setError(data.error || 'Failed to send payment request. Please try again.');
+        return;
       }
 
-      if (attempts >= maxAttempts) {
-        clearInterval(pollRef.current);
-        clearInterval(timerRef.current);
-        setStage('failed');
-        setError('Payment timed out. Please try again.');
-      }
+      setCheckoutId(data.checkoutRequestId);
+      setStage('waiting');
+      setCountdown(60);
+      startPolling(data.checkoutRequestId);
 
     } catch (err) {
-      console.error('Polling error:', err);
+      setStage('failed');
+      setError('Network error. Please try again.');
     }
-  }, 3000);
-};
-    // Demo: simulate network delay for STK push initiation
-    await new Promise(r => setTimeout(r, 1800));
+  };
 
-    const fakeCheckoutId = 'ws_CO_' + Date.now();
-    setCheckoutId(fakeCheckoutId);
-    setStage('waiting');
-    setCountdown(60);
+  const startPolling = (checkoutRequestId) => {
+    let attempts = 0;
+    const maxAttempts = 20; // 60s / 3s
 
-    // Demo: auto-succeed after 6 seconds (simulates user entering PIN)
-    // In production: poll GET /api/mpesa/query?checkoutId=... every 3s
-    
+    pollRef.current = setInterval(async () => {
+      attempts++;
+
+      try {
+        const res = await fetch(`/api/mpesa/query?checkoutRequestId=${checkoutRequestId}`);
+        const data = await res.json();
+
+        console.log('Poll result:', data);
+
+        if (data.status === 'confirmed') {
+          clearInterval(pollRef.current);
+          clearInterval(timerRef.current);
+          setStage('success');
+          setTimeout(() => {
+            onSuccess({
+              method: 'mpesa',
+              checkoutId: checkoutRequestId,
+              orderId: data.orderId,
+              amount,
+            });
+          }, 1500);
+        }
+
+        if (data.status === 'failed' || data.status === 'cancelled') {
+          clearInterval(pollRef.current);
+          clearInterval(timerRef.current);
+          setStage('failed');
+          setError(
+            data.status === 'cancelled'
+              ? 'Payment was cancelled. Please try again.'
+              : 'Payment failed. Please try again.'
+          );
+        }
+
+        if (attempts >= maxAttempts) {
+          clearInterval(pollRef.current);
+          clearInterval(timerRef.current);
+          setStage('failed');
+          setError('Payment timed out. Please try again.');
+        }
+
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    }, 3000);
+  };
+
   // Countdown timer while waiting
   useEffect(() => {
     if (stage !== 'waiting') return;
@@ -156,7 +137,7 @@ const startPolling = (checkoutRequestId) => {
       setCountdown(c => {
         if (c <= 1) {
           clearInterval(timerRef.current);
-          clearTimeout(pollRef.current);
+          clearInterval(pollRef.current);
           setStage('failed');
           setError('Payment request timed out. Please try again.');
           return 0;
@@ -168,7 +149,7 @@ const startPolling = (checkoutRequestId) => {
   }, [stage]);
 
   const retry = () => {
-    clearTimeout(pollRef.current);
+    clearInterval(pollRef.current);
     clearInterval(timerRef.current);
     setStage('input');
     setCountdown(60);
@@ -264,7 +245,6 @@ const startPolling = (checkoutRequestId) => {
       {/* WAITING STAGE */}
       {stage === 'waiting' && (
         <div className="text-center space-y-5">
-          {/* Animated phone */}
           <div className="relative w-20 h-20 mx-auto">
             <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: MPESA_GREEN + '20' }}>
               <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background: MPESA_GREEN }}>
@@ -274,7 +254,6 @@ const startPolling = (checkoutRequestId) => {
                 </svg>
               </div>
             </div>
-            {/* Pulse ring */}
             <div className="absolute inset-0 rounded-full animate-ping opacity-30" style={{ background: MPESA_GREEN }} />
           </div>
 
@@ -293,7 +272,6 @@ const startPolling = (checkoutRequestId) => {
             <p className="font-sans text-xs text-ink/60">3. Press OK to confirm payment of {KES(amount)}</p>
           </div>
 
-          {/* Countdown */}
           <div className="flex items-center justify-center gap-2">
             <div className="relative w-12 h-12">
               <svg className="w-12 h-12 -rotate-90" viewBox="0 0 48 48">
@@ -352,11 +330,6 @@ const startPolling = (checkoutRequestId) => {
           <button onClick={onBack} className="w-full btn-outline">Use Card Instead</button>
         </div>
       )}
-
-      {/* Demo notice */}
-      <p className="font-sans text-[0.55rem] text-ink/25 text-center mt-4 leading-relaxed">
-        Demo mode — no real payment processed. Replace simulateSTKPush in MpesaPayment.js with your Daraja API route.
-      </p>
     </div>
   );
 }
