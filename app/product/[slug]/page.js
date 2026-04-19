@@ -4,7 +4,8 @@ import ProductClient from './ProductClient';
 import { supabaseAdmin } from '@/lib/supabase';
 
 export async function generateMetadata({ params }) {
-  const product = products.find(p => p.slug === params.slug);
+  const { slug } = await params;
+  const product = products.find(p => p.slug === slug);
   if (!product) return {};
   return {
     title: `${product.name} — $${product.price}`,
@@ -23,14 +24,15 @@ export function generateStaticParams() {
 }
 
 export default async function ProductPage({ params }) {
-  const product = products.find(p => p.slug === params.slug);
+  const { slug } = await params;
+  const product = products.find(p => p.slug === slug);
   if (!product) notFound();
 
   // Fetch live stock from Supabase
   const { data: liveProduct } = await supabaseAdmin
     .from('products')
     .select('stock')
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .single();
 
   // Merge live stock into product data
