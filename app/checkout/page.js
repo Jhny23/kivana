@@ -147,7 +147,7 @@ const handleOrderComplete = async (paymentDetails) => {
     } catch {}
 
     clearCart();
-    router.push('/order-confirmation');
+    router.push(`/order-confirmation?id=${data.orderId}`);
 
   } catch (err) {
     console.error('Order error:', err);

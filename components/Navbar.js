@@ -5,7 +5,7 @@ import { useCart } from '@/context/CartContext';
 import { products } from '@/lib/products';
 
 export default function Navbar() {
-  const { count, setIsOpen } = useCart();
+  const { count, setIsOpen, hydrated } = useCart();
   const [shopOpen,   setShopOpen]   = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -126,7 +126,7 @@ export default function Navbar() {
                 <circle cx="8" cy="15" r="1" fill="currentColor" />
                 <circle cx="14" cy="15" r="1" fill="currentColor" />
               </svg>
-              {count > 0 && (
+              {hydrated && count > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-ink text-cream text-[0.55rem] font-sans font-medium flex items-center justify-center leading-none">
                   {count}
                 </span>
