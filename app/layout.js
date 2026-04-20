@@ -12,12 +12,12 @@ export const metadata = {
   keywords: 'skincare, cruelty-free, vegan, clean beauty, serum, cleanser, moisturizer, Kivana',
   metadataBase: new URL('https://www.kivana.co'),
   openGraph: {
-    title: 'Kivana — Cruelty-Free Skincare',
+    title: 'Kivana — Authentic Skincare',
     description: 'Essential cruelty-free skincare for a glowy and healthy skin.',
     type: 'website',
-    images: [{ url: '/og-image.jpg', width: 1200, height: 630, alt: 'Kivana Skincare' }],
+    images: [{ url: '/hero-bg.jpg', width: 1200, height: 630, alt: 'Kivana Skincare' }],
   },
-  twitter: { card: 'summary_large_image', title: 'Kivana', description: 'Cruelty-free skincare for glowy skin.' },
+  twitter: { card: 'summary_large_image', title: 'Kivana', description: 'Authentic skincare for glowy skin.' },
   icons: { icon: '/favicon.svg', shortcut: '/favicon.svg' },
   robots: { index: true, follow: true },
 };
