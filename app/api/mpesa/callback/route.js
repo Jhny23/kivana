@@ -26,6 +26,16 @@ export async function POST(request) {
 
       return Response.json({ ResultCode: 0, ResultDesc: 'Accepted' });
     }
+    // Store confirmation in a separate lightweight table
+// so the frontend can pick it up even after timeout
+await supabaseAdmin
+  .from('payment_confirmations')
+  .upsert([{
+    checkout_request_id: CheckoutRequestID,
+    status: 'confirmed',
+    mpesa_receipt: mpesaReceiptNo,
+    confirmed_at: new Date().toISOString(),
+  }], { onConflict: 'checkout_request_id' });
 
     // Extract payment details from callback metadata
     const items    = CallbackMetadata?.Item || [];

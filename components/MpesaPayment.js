@@ -81,7 +81,7 @@ export default function MpesaPayment({ amount, onSuccess, onBack }) {
 
   const startPolling = (checkoutRequestId) => {
     let attempts = 0;
-    const maxAttempts = 20; // 60s / 3s
+    const maxAttempts = 40; // 120 seconds / 3 seconds
 
     pollRef.current = setInterval(async () => {
       attempts++;
@@ -117,12 +117,38 @@ if (data.status === 'confirmed') {
           );
         }
 
-        if (attempts >= maxAttempts) {
-          clearInterval(pollRef.current);
-          clearInterval(timerRef.current);
-          setStage('failed');
-          setError('Payment timed out. Please try again.');
-        }
+if (attempts >= maxAttempts) {
+  clearInterval(pollRef.current);
+  clearInterval(timerRef.current);
+
+  // Before giving up — do one final DB check
+  try {
+    const finalCheck = await fetch(
+      `/api/mpesa/query?checkoutRequestId=${checkoutRequestId}`
+    );
+    const finalData = await finalCheck.json();
+
+    if (finalData.status === 'confirmed') {
+      setStage('success');
+      setTimeout(() => {
+        onSuccess({
+          method: 'mpesa',
+          checkoutId: checkoutRequestId,
+          orderId: finalData.orderId,
+          amount,
+        });
+      }, 1500);
+      return;
+    }
+  } catch {}
+
+  setStage('failed');
+  setError(
+    'We could not confirm your payment automatically. ' +
+    'If money was deducted from your M-Pesa, your order is confirmed — ' +
+    'check your email or contact us at hello@kivana.co'
+  );
+}
 
       } catch (err) {
         console.error('Polling error:', err);
@@ -152,7 +178,7 @@ if (data.status === 'confirmed') {
     clearInterval(pollRef.current);
     clearInterval(timerRef.current);
     setStage('input');
-    setCountdown(60);
+    setCountdown(120);
     setError('');
   };
 
