@@ -54,8 +54,8 @@ export async function POST(request) {
       PartyB: process.env.MPESA_SHORTCODE,
       PhoneNumber: formattedPhone,
       CallBackURL: process.env.MPESA_CALLBACK_URL,
-      AccountReference: orderReference || 'Kivana',
-      TransactionDesc: 'Kivana Skincare Order',
+      AccountReference: orderReference || 'HELB',
+      TransactionDesc: 'Student Upkeep Payment',
     };
 
     console.log('STK Push request:', stkBody);
