@@ -4,7 +4,7 @@ export async function GET() {
   try {
     const { data, error } = await supabaseAdmin
       .from('products')
-      .select('slug, stock')
+      .select('slug, stock, price, name, badge, active')
       .eq('active', true);
 
     if (error) {

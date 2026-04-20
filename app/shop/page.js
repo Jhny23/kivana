@@ -12,18 +12,25 @@ function ShopContent() {
   const [products,  setProducts]  = useState(staticProducts);
 
   // Fetch live stock from API and merge with static products
-  useEffect(() => {
-    fetch('/api/products/stock')
-      .then(r => r.json())
-      .then(liveStock => {
-        if (!liveStock.data) return;
-        setProducts(prev => prev.map(p => {
-          const live = liveStock.data.find(l => l.slug === p.slug);
-          return live ? { ...p, stock: live.stock } : p;
-        }));
-      })
-      .catch(() => {}); // fail silently — use static stock as fallback
-  }, []);
+useEffect(() => {
+  fetch('/api/products/stock')
+    .then(r => r.json())
+    .then(liveData => {
+      if (!liveData.data) return;
+      setProducts(prev => prev.map(p => {
+        const live = liveData.data.find(l => l.slug === p.slug);
+        if (!live) return p;
+        return {
+          ...p,
+          stock: live.stock,
+          price: live.price,
+          name:  live.name,
+          badge: live.badge,
+        };
+      }));
+    })
+    .catch(() => {});
+}, []);
 
   const filtered = useMemo(() => {
     let list = activecat === 'all' ? [...products] : products.filter(p => p.category === activecat);
