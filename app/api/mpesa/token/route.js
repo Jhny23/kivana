@@ -9,14 +9,29 @@ export async function getAccessToken() {
       method: 'GET',
       headers: {
         Authorization: `Basic ${credentials}`,
+        'Content-Type': 'application/json',
       },
+      cache: 'no-store',
     }
   );
 
-  const data = await res.json();
+  const text = await res.text();
+  console.log('Token response status:', res.status);
+  console.log('Token response body:', text);
+
+  if (!res.ok) {
+    throw new Error(`Token request failed: ${res.status} — ${text}`);
+  }
+
+  let data;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(`Token response is not JSON: ${text}`);
+  }
 
   if (!data.access_token) {
-    throw new Error('Failed to get M-Pesa access token');
+    throw new Error(`No access token in response: ${text}`);
   }
 
   return data.access_token;

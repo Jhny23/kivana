@@ -92,19 +92,19 @@ export default function MpesaPayment({ amount, onSuccess, onBack }) {
 
         console.log('Poll result:', data);
 
-        if (data.status === 'confirmed') {
-          clearInterval(pollRef.current);
-          clearInterval(timerRef.current);
-          setStage('success');
-          setTimeout(() => {
-            onSuccess({
-              method: 'mpesa',
-              checkoutId: checkoutRequestId,
-              orderId: data.orderId,
-              amount,
-            });
-          }, 1500);
-        }
+if (data.status === 'confirmed') {
+  clearInterval(pollRef.current);
+  clearInterval(timerRef.current);
+  setStage('success');
+  setTimeout(() => {
+    onSuccess({
+      method: 'mpesa',
+      checkoutId: checkoutRequestId,
+      orderId: data.orderId || null,
+      amount,
+    });
+  }, 1500);
+}
 
         if (data.status === 'failed' || data.status === 'cancelled') {
           clearInterval(pollRef.current);
