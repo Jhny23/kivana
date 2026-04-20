@@ -241,7 +241,7 @@ try {
               <h3 className="font-display text-lg font-medium text-ink mb-4">Shipping Method</h3>
               <div className="space-y-3 mb-8">
                 {[
-                  { id:'standard', label:'Standard Shipping', desc:'3–7 business days', price: discounted>=95?'Free':'$8.00' },
+                  { id:'standard', label:'Standard Shipping', desc:'3–7 business days', price: discounted>=95?'Free':'$0.00' },
                   { id:'express',  label:'Express Shipping',  desc:'1–3 business days', price:'$15.00' },
                 ].map(m => (
                   <label key={m.id} className={`flex items-center justify-between p-4 border cursor-pointer transition-colors ${shipping.method===m.id?'border-ink bg-cream':'border-ink/15 hover:border-ink/40'}`}>
