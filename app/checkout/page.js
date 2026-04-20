@@ -86,7 +86,7 @@ export default function CheckoutPage() {
   const discountRate = couponApplied && VALID_COUPONS[coupon.toUpperCase()] ? VALID_COUPONS[coupon.toUpperCase()] : 0;
   const discountAmt  = total * discountRate;
   const discounted   = total - discountAmt;
-  const shippingCost = shipping.method === 'express' ? 15 : (discounted >= 95 ? 0 : 8);
+  const shippingCost = 0;
   const tax          = discounted * 0.16;
   const grand        = discounted + shippingCost + tax;
 
