@@ -89,18 +89,40 @@ export async function GET(request) {
       console.log('Safaricom query parsed:', data);
 
       // Payment successful
-      if (data.ResultCode === '0' || data.ResultCode === 0) {
-        if (order) {
-          await supabaseAdmin
-            .from('orders')
-            .update({ status: 'confirmed' })
-            .eq('id', order.id);
-        }
-        return Response.json({
-          status: 'confirmed',
-          orderId: order?.id || null,
-        });
-      }
+// Payment successful
+if (data.ResultCode === '0' || data.ResultCode === 0) {
+  if (order) {
+    // Update order status
+    const { data: confirmedOrder } = await supabaseAdmin
+      .from('orders')
+      .update({ 
+        status: 'confirmed',
+        payment_reference: data.MpesaReceiptNumber || order.payment_reference,
+      })
+      .eq('id', order.id)
+      .select()
+      .single();
+
+    // Fire emails if not already sent
+    if (confirmedOrder) {
+      const { sendOrderConfirmation, sendOrderNotification } = await import('@/lib/emails');
+      Promise.all([
+        sendOrderConfirmation(confirmedOrder),
+        sendOrderNotification(confirmedOrder),
+      ]).catch(err => console.error('Query email error:', err));
+    }
+
+    return Response.json({
+      status: 'confirmed',
+      orderId: order.id,
+      orderNumber: `KIV-${order.id.slice(0, 8).toUpperCase()}`,
+    });
+  }
+
+  // Payment confirmed but no pending order found
+  // This can happen if the order wasn't saved before payment
+  return Response.json({ status: 'confirmed', orderId: null });
+}
 
       // Cancelled
       if (data.ResultCode === '1032') {
