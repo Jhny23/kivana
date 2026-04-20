@@ -6,7 +6,7 @@ const MPESA_GREEN = '#00A651';
 // M-Pesa STK Push — mirrors the real Safaricom Daraja API flow.
 // Credentials needed: MPESA_CONSUMER_KEY, MPESA_CONSUMER_SECRET, MPESA_SHORTCODE, MPESA_PASSKEY
 
-export default function MpesaPayment({ amount, onSuccess, onBack }) {
+export default function MpesaPayment({ amount, onInitiate, onSuccess, onBack }) {
   const [phone,     setPhone]     = useState('');
   const [stage,     setStage]     = useState('input'); // input | pushing | waiting | success | failed
   const [countdown, setCountdown] = useState(60);
@@ -68,10 +68,17 @@ export default function MpesaPayment({ amount, onSuccess, onBack }) {
         return;
       }
 
-      setCheckoutId(data.checkoutRequestId);
-      setStage('waiting');
-      setCountdown(60);
-      startPolling(data.checkoutRequestId);
+const checkoutRequestId = data.checkoutRequestId;
+setCheckoutId(checkoutRequestId);
+
+// Save pending order BEFORE customer enters PIN
+if (onInitiate) {
+  await onInitiate(checkoutRequestId);
+}
+
+setStage('waiting');
+setCountdown(120);
+startPolling(checkoutRequestId);
 
     } catch (err) {
       setStage('failed');

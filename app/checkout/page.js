@@ -104,6 +104,33 @@ export default function CheckoutPage() {
     setPayment(p => ({ ...p, [e.target.name]: v }));
   };
 
+
+const savePendingOrder = async (checkoutRequestId) => {
+  try {
+    const res = await fetch('/api/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        items,
+        shipping,
+        payment: {
+          method: 'mpesa',
+          checkoutId: checkoutRequestId,
+        },
+        subtotal: total.toFixed(2),
+        discount: discountAmt.toFixed(2),
+        shippingCost: shippingCost.toFixed(2),
+        tax: tax.toFixed(2),
+        total: grand.toFixed(2),
+        status: 'pending',
+      }),
+    });
+    const data = await res.json();
+    console.log('Pending order saved:', data);
+  } catch (err) {
+    console.error('Failed to save pending order:', err);
+  }
+};
 const handleOrderComplete = async (paymentDetails) => {
   try {
     const status = paymentDetails.method === 'mpesa' ? 'pending' : 'confirmed';
@@ -283,7 +310,12 @@ try {
               </div>
 
               {payMethod === 'mpesa' && (
-                <MpesaPayment amount={grand} onSuccess={handleOrderComplete} onBack={() => setPayMethod('card')} />
+                <MpesaPayment
+  amount={grand}
+  onInitiate={savePendingOrder}
+  onSuccess={handleOrderComplete}
+  onBack={() => setPayMethod('card')}
+/>
               )}
 
               {payMethod === 'card' && (
